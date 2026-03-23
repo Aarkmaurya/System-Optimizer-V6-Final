@@ -1,0 +1,42 @@
+name: Build Ghost APK
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip autoconf automake libtool m4 pkg-config \
+          zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev \
+          build-essential python3-dev libltdl-dev
+
+      - name: Install Buildozer and Cython
+        run: |
+          pip install --upgrade pip
+          # Stability ke liye fixed versions
+          pip install buildozer==1.5.0 cython==0.29.33 kivy==2.3.0
+
+      - name: Build with Buildozer
+        run: |
+          export APP_ANDROID_ACCEPT_SDK_LICENSE=1
+          export BUILDOZER_ALLOW_ORG_NAME_START=1
+          # yes pipe handle karne ke liye stdbuf
+          stdbuf -oL yes | buildozer android debug || true
+          
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: System-Optimizer-V6
+          path: |
+            bin/*.apk
+            .buildozer/android/platform/build-*/dists/*/bin/*.apk
+
